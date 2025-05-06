@@ -102,7 +102,7 @@ def detect_rfi_1d(ms_path: str, window_size: int = DEFAULT_WINDOW_SIZE, nsigma: 
             # mask flagged visibilities
             bldata[blflag] = np.nan
             if np.all(np.isnan(bldata)):
-                logger.warning(f"All data are flagged for baseline {ant1}-{ant2}. Skipping...")
+                #logger.warning(f"All data are flagged for baseline {ant1}-{ant2}. Skipping...")
                 continue
 
             # average over channels for each time, parallel hands only
