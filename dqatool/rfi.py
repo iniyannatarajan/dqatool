@@ -1,0 +1,194 @@
+from casacore import tables
+import numpy as np
+from astropy.time import Time
+from dqatool.logging_config import get_logger
+from scipy.stats import median_abs_deviation as mad
+from dqatool.constants import DEFAULT_NSIGMA, DEFAULT_WINDOW_SIZE, DEFAULT_SD_SCALE, SECONDS_IN_DAY
+
+# Create a logger for this file
+logger = get_logger(__name__)
+
+def detect_rfi_1d(ms_path: str, window_size: int = DEFAULT_WINDOW_SIZE, nsigma: int = DEFAULT_NSIGMA, sdscale: float = DEFAULT_SD_SCALE,
+                  overwriteflags: bool = False, flagfile: str = "rfi_flags.txt") -> None:
+    """
+    Detect radio-frequency interference (RFI) in a MeasurementSet by baseline using a 
+    rolling median and median absolute deviation (MAD) in the time domain.
+
+    This function scans each baseline (antenna pair) in the MS, computes the time-series
+    of channel-averaged amplitudes for the XX and YY correlations, and flags time samples
+    whose amplitudes deviate from the rolling median by more than `nsigma` × MAD.
+    Detected flags can optionally be written back into the MS, and a CASA-compatible
+    flag file is always generated.
+
+    Parameters
+    ----------
+    ms_path : str
+        Path to the CASA MS.
+    window_size : int, optional
+        Number of time samples in the sliding window used to compute the rolling median
+        and MAD (default is `DEFAULT_WINDOW_SIZE`).
+    nsigma : int, optional
+        Threshold multiplier for flagging outliers. Times at which the amplitude exceeds
+        median ± `nsigma` × MAD are flagged (default is `DEFAULT_NSIGMA`).
+    sdscale : float, optional
+        Scale factor applied to the MAD to make it comparable to the standard deviation
+        (default is `DEFAULT_SD_SCALE`, typically 1.4826 for Gaussian noise).
+    overwriteflags : bool, optional
+        If True, update the FLAG and FLAG_ROW columns in the MS with the
+        detected RFI flags. If False, the MS is left unmodified (default False).
+    flagfile : str, optional
+        Filename for the output CASA-compatible flag list. Each line lists the
+        antenna pair and time range of a detected RFI event (default "rfi_flags.txt").
+
+    Returns
+    -------
+    None
+        All outputs are written to `flagfile` and optionally to the MS (if `overwriteflags=True`).
+        No value is returned.
+
+    Notes
+    -----
+    - Data flagged in the original MS are ignored (masked to NaN) before computing
+      statistics.
+    - A leave-one-out strategy is used when computing the rolling statistics: for each
+      time sample, the window excludes that sample to avoid bias.
+    - The output flagfile uses the flag file syntax understood by CASA (`antenna='i&j' timerange='HH:MM:SS'`)
+      to record baseline and time information.
+
+    Examples
+    --------
+    Detect RFI without modifying the MS and write flags to "my_flags.txt":
+    
+    >>> detect_rfi_1d("mydata.ms", window_size=25, nsigma=5,
+    ...               sdscale=1.4826, overwriteflags=False,
+    ...               flagfile="my_flags.txt")
+
+    Detect RFI and update the MS in place:
+
+    >>> detect_rfi_1d("mydata.ms", overwriteflags=True)
+    """
+    # Load data from MS
+    vis = tables.table(ms_path, ack=False)
+    antenna1 = vis.getcol("ANTENNA1")
+    antenna2 = vis.getcol("ANTENNA2")
+    
+    # Assign values to some common variables
+    antstart = 0
+    antstop = len(np.union1d(antenna1, antenna2))
+    half_wsize = window_size // 2
+
+    # Dictionary to hold flagged times for each baseline
+    # The keys are tuples of (antenna1, antenna2) and the values are arrays of times
+    flag_times_bldict = {}
+
+    for ant1 in range(antstart, antstop):
+        for ant2 in range(ant1 + 1, antstop):
+            logger.info(f"Processing baseline {ant1}-{ant2}")
+            bltab = vis.query(f"ANTENNA1=={ant1} AND ANTENNA2=={ant2}")
+            if bltab.nrows() == 0:
+                logger.warning(f"No data found for baseline {ant1}-{ant2}")
+                continue
+
+            bltimes = bltab.getcol("TIME")
+            bltimeoffsets = bltimes - bltimes[0]
+            bldata = bltab.getcol('DATA')     # shape = (n_times, n_chan, 4)
+            blflag = bltab.getcol("FLAG")
+
+            # mask flagged visibilities
+            bldata[blflag] = np.nan
+            if np.all(np.isnan(bldata)):
+                logger.warning(f"All data are flagged for baseline {ant1}-{ant2}. Skipping...")
+                continue
+
+            # average over channels for each time, parallel hands only
+            dataxx = np.nanmean(np.abs(bldata[:, :, 0]), axis=1)
+            datayy = np.nanmean(np.abs(bldata[:, :, 3]), axis=1)
+
+            n_times, n_chan = bldata.shape[0], bldata.shape[1]
+
+            # allocate stats arrays
+            medianxx   = np.zeros(n_times)
+            medianyy   = np.zeros(n_times)
+            dataxx_mad = np.zeros(n_times)
+            datayy_mad = np.zeros(n_times)
+
+            # compute rolling median and MAD values given the window size
+            # handle edge cases for the first and last few points
+            for ntime in range(n_times):
+                # Ensure that the windows stay the same size for data points at the edges
+                w_start = max(0, ntime - half_wsize)
+                w_end   = min(n_times, ntime + half_wsize + 1)
+
+                # pad the edges
+                if w_end - w_start < window_size:
+                    if w_start == 0:
+                        w_end = min(n_times, window_size)
+                    elif w_end == n_times:
+                        w_start = max(0, n_times - window_size)
+        
+                # Reshape data to compute time slices to skip
+                segment_xx = np.abs(bldata[w_start:w_end, :, 0]).reshape(-1)
+                segment_yy = np.abs(bldata[w_start:w_end, :, 3]).reshape(-1)
+
+                # Compute the indices of time slices to skip
+                idx_offset = ntime - w_start
+                t0 = idx_offset * n_chan
+                t1 = t0 + n_chan
+
+                # stitch together the data segments
+                loo_xx = np.concatenate([segment_xx[:t0], segment_xx[t1:]])
+                loo_yy = np.concatenate([segment_yy[:t0], segment_yy[t1:]])
+
+                # Compute the median and MAD for the current time slice
+                medianxx[ntime]   = np.nanmedian(loo_xx)
+                medianyy[ntime]   = np.nanmedian(loo_yy)
+                dataxx_mad[ntime] = mad(loo_xx, nan_policy='omit', scale=sdscale, axis=None)
+                datayy_mad[ntime] = mad(loo_yy, nan_policy='omit', scale=sdscale, axis=None)
+
+            # Set thresholds for outlier detection
+            thres_up_xx = medianxx + nsigma * dataxx_mad
+            thres_lo_xx = medianxx - nsigma * dataxx_mad
+            thres_up_yy = medianyy + nsigma * datayy_mad
+            thres_lo_yy = medianyy - nsigma * datayy_mad
+
+            # Find outliers in dataxx and datayy
+            outxx = np.where((dataxx > thres_up_xx) | (dataxx < thres_lo_xx))[0]
+            outyy = np.where((datayy > thres_up_yy) | (datayy < thres_lo_yy))[0]
+
+            flag_times_bldict[(ant1, ant2)] = bltimes[np.union1d(outxx, outyy)]
+
+    # Write flags to MS if requested
+    if overwriteflags:
+        # Read relevant arrays from MS
+        alltimes = vis.getcol("TIME")
+        flag_row = vis.getcol("FLAG_ROW")
+        flag = vis.getcol("FLAG")
+
+        # Close the MS table
+        vis.close()
+
+        # Update flag arrays
+        for (ant1, ant2), times in flag_times_bldict.items():
+            for timeval in times:
+                idx = np.where((antenna1 == ant1) & (antenna2 == ant2) & (alltimes  == timeval))[0]
+                flag_row[idx] = True
+                flag[idx, :, :] = True
+
+        with tables.table(ms_path, readonly=False) as ms:
+            ms.putcol("FLAG_ROW", flag_row)
+            ms.putcol("FLAG",     flag)
+
+        logger.info("Flags updated in the MS.")
+    else:
+        logger.info("Flags not written to the MS. Use overwriteflags=True to write flags.")
+
+    # Write the flags to a file in a format compatible with CASA
+    with open(flagfile, "w") as f:
+        for (ant1, ant2), times in flag_times_bldict.items():
+            # Convert times to datetime
+            times_dt = Time(times / SECONDS_IN_DAY, format='mjd').to_datetime()
+            for tval in times_dt:
+                f.write(f"antenna='{ant1}&{ant2}' timerange='{tval.strftime('%H:%M:%S')}'\n")
+        
+    logger.info(f"RFI detection completed and flags written to {flagfile}.")
+

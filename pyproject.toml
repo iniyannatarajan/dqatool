@@ -1,0 +1,29 @@
+[tool.poetry]
+name        = "dqatool"
+version     = "0.1.0"
+description = "Data‐Quality Assessment (DQA) tools for radio interferometric data sets"
+readme      = "README.md"
+license     = "MIT"
+authors     = ["Iniyan Natarajan <iniyannatarajan@gmail.com>"]
+
+# include your package directory
+packages = [
+  { include = "dqatool" }
+]
+
+[tool.poetry.dependencies]
+python         = "^3.10"
+numpy          = "^2.2"
+scipy          = "^1.15"
+astropy        = "^6.1"
+matplotlib     = "^3.10"
+bokeh          = "^3.7"
+seaborn        = "^0.13"
+
+[tool.poetry.group.dev.dependencies]
+pytest    = "^7.0"
+black     = "^23.1.0"
+
+[build-system]
+requires    = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
