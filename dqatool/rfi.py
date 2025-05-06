@@ -4,6 +4,9 @@ from astropy.time import Time
 from dqatool.logging_config import get_logger
 from scipy.stats import median_abs_deviation as mad
 from dqatool.constants import DEFAULT_NSIGMA, DEFAULT_WINDOW_SIZE, DEFAULT_SD_SCALE, SECONDS_IN_DAY
+from itertools import combinations
+from tqdm import tqdm
+from tqdm.contrib.logging import logging_redirect_tqdm
 
 # Create a logger for this file
 logger = get_logger(__name__)
@@ -29,7 +32,7 @@ def detect_rfi_1d(ms_path: str, window_size: int = DEFAULT_WINDOW_SIZE, nsigma: 
         and MAD (default is `DEFAULT_WINDOW_SIZE`).
     nsigma : int, optional
         Threshold multiplier for flagging outliers. Times at which the amplitude exceeds
-        median ± `nsigma` × MAD are flagged (default is `DEFAULT_NSIGMA`).
+        median ± `nsigma` * MAD are flagged (default is `DEFAULT_NSIGMA`).
     sdscale : float, optional
         Scale factor applied to the MAD to make it comparable to the standard deviation
         (default is `DEFAULT_SD_SCALE`, typically 1.4826 for Gaussian noise).
@@ -75,15 +78,17 @@ def detect_rfi_1d(ms_path: str, window_size: int = DEFAULT_WINDOW_SIZE, nsigma: 
     # Assign values to some common variables
     antstart = 0
     antstop = len(np.union1d(antenna1, antenna2))
+    total_baselines = (antstop - antstart) * (antstop - antstart - 1) // 2
+    baseline_iter = combinations(range(antstart, antstop), 2)
+
     half_wsize = window_size // 2
 
     # Dictionary to hold flagged times for each baseline
     # The keys are tuples of (antenna1, antenna2) and the values are arrays of times
     flag_times_bldict = {}
 
-    for ant1 in range(antstart, antstop):
-        for ant2 in range(ant1 + 1, antstop):
-            logger.info(f"Processing baseline {ant1}-{ant2}")
+    for ant1, ant2 in tqdm(baseline_iter, total=total_baselines, desc="Processing baselines"):
+        with logging_redirect_tqdm():
             bltab = vis.query(f"ANTENNA1=={ant1} AND ANTENNA2=={ant2}")
             if bltab.nrows() == 0:
                 logger.warning(f"No data found for baseline {ant1}-{ant2}")

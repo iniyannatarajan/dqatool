@@ -32,7 +32,7 @@ conda activate dqa
 Install the CASA libraries plus Jupyter tools in one go:
 
 ```bash
-mamba install casacore python-casacore casatasks casatools ipython ipykernel notebook jupyterlab -y
+mamba install casacore python-casacore casatasks casatools ipython ipykernel ipywidgets notebook jupyterlab -y
 ```
 
 ### 3. Register the Jupyter Kernel
