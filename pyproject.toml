@@ -20,6 +20,7 @@ matplotlib     = "^3.10"
 bokeh          = "^3.7"
 seaborn        = "^0.13"
 tqdm = "^4.67.1"
+bdsf = "^1.13.0.post2"
 
 [tool.poetry.group.dev.dependencies]
 pytest    = "^7.0"

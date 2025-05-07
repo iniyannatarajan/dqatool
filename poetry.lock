@@ -71,6 +71,50 @@ docs = ["pytest"]
 test = ["hypothesis", "pytest", "pytest-remotedata"]
 
 [[package]]
+name = "backports-shutil-get-terminal-size"
+version = "1.0.0"
+description = "A backport of the get_terminal_size function from Python 3.3's shutil."
+optional = false
+python-versions = "*"
+groups = ["main"]
+files = [
+    {file = "backports.shutil_get_terminal_size-1.0.0-py2.py3-none-any.whl", hash = "sha256:0975ba55054c15e346944b38956a4c9cbee9009391e41b86c68990effb8c1f64"},
+    {file = "backports.shutil_get_terminal_size-1.0.0.tar.gz", hash = "sha256:713e7a8228ae80341c70586d1cc0a8caa5207346927e23d09dcbcaf18eadec80"},
+]
+
+[[package]]
+name = "bdsf"
+version = "1.13.0.post2"
+description = "Blob Detector and Source Finder"
+optional = false
+python-versions = ">=3.9"
+groups = ["main"]
+files = [
+    {file = "bdsf-1.13.0.post2-cp310-cp310-macosx_13_0_x86_64.whl", hash = "sha256:36359595c952cefafc9771ce833a967d871285a65d2b397ec0d52fd72af2c0bf"},
+    {file = "bdsf-1.13.0.post2-cp310-cp310-macosx_14_0_arm64.whl", hash = "sha256:d78354bedfcf882596e7a9c3d2e55a9a22422609625b4d1808aa0b6fea0a6839"},
+    {file = "bdsf-1.13.0.post2-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:e73ef76fd76bc6ab59c0455d528582d7c4849ece3b955b20085df97cdfc154e6"},
+    {file = "bdsf-1.13.0.post2-cp311-cp311-macosx_13_0_x86_64.whl", hash = "sha256:6291877f8fd7dd29ad4b7fbf59c19196787ed8368b3b6320739ff75c6b5f9d26"},
+    {file = "bdsf-1.13.0.post2-cp311-cp311-macosx_14_0_arm64.whl", hash = "sha256:93189bce68ad432fc413c74b21c737fca1b8e8f98d762eded46bf418f3ccdcf2"},
+    {file = "bdsf-1.13.0.post2-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:3fe72d966e1609870348cb0a6c4d82fb16db1785ae22f273305c8e81b7356b09"},
+    {file = "bdsf-1.13.0.post2-cp312-cp312-macosx_13_0_x86_64.whl", hash = "sha256:b8fa616f5de49514f522a3cc812de40974ce0c7dee6c2fe3db277ef4f146d597"},
+    {file = "bdsf-1.13.0.post2-cp312-cp312-macosx_14_0_arm64.whl", hash = "sha256:58201c0931ecddad697a085decb6aa571e45c5cbff05beeb00721064ddbb2d42"},
+    {file = "bdsf-1.13.0.post2-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:a1fb4708aa79db275b2c69da988239317215eceaf34566c34e41834883bddea2"},
+    {file = "bdsf-1.13.0.post2-cp39-cp39-macosx_13_0_x86_64.whl", hash = "sha256:f281c623491d25af4a20edbdb884a57d084f43b508665e6d2f8d9f7029d8f6b2"},
+    {file = "bdsf-1.13.0.post2-cp39-cp39-macosx_14_0_arm64.whl", hash = "sha256:91fbeee8588bff7172c5b150524d49d88d4083526f34e374d3d8a1f6033ac014"},
+    {file = "bdsf-1.13.0.post2-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:c2b9bd8f9394c9aa23e0179cad4594d8d9dd7c5ec2b249d9aeef91a61174d363"},
+    {file = "bdsf-1.13.0.post2.tar.gz", hash = "sha256:2a91647fcdb1f6574958312d85decd4529a10e710926f11300a2388f4c9e25cd"},
+]
+
+[package.dependencies]
+astropy = "*"
+"backports.shutil-get-terminal-size" = "*"
+numpy = "*"
+scipy = "*"
+
+[package.extras]
+ishell = ["ipython (<8.11.dev0 || >=8.16.dev0)", "matplotlib"]
+
+[[package]]
 name = "black"
 version = "23.12.1"
 description = "The uncompromising code formatter."
@@ -1328,4 +1372,4 @@ files = [
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.10"
-content-hash = "ed47397bf6b41a8eb964b4e772b2e3012cc1f0c7cec42745cecbc574fba94610"
+content-hash = "58e4ae6852bdc8388aa7731c0fec37d51c2175de33567d9587236398920bdbd1"
