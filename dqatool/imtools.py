@@ -75,10 +75,20 @@ def display_catalog(catalog_name: str) -> None:
     """
     Display the brightest 20 sources from the source catalog.
 
+    This function reads the source catalog, processes it to extract relevant
+    columns, and displays the top 20 sources sorted by their total flux in
+    descending order.
+
     Parameters
     ----------
     catalog_name : str
         Name of the catalog file to be displayed.
+
+    Returns
+    -------
+    pandas.DataFrame
+        A DataFrame containing the top 20 brightest sources with columns:
+        'Source_id', 'RA', 'DEC', and 'Total_flux'.
     """
     logger.info(f"Displaying catalog {catalog_name}...")
 
