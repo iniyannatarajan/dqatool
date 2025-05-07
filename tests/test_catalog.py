@@ -1,14 +1,10 @@
 import pandas as pd
-import pytest
-import pathlib
 import os
-
 from dqatool.imtools import display_catalog
 
-DATA_DIR = pathlib.Path(__file__).parent / "data"
+DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
 
-def test_display_catalog_returns_top_20(tmp_path):
-
+def test_display_catalog_returns_top_20():
     catalog_file = os.path.join(DATA_DIR, "sample_catalog.txt")
 
     # Run the function
