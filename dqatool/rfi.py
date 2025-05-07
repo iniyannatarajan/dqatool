@@ -96,7 +96,7 @@ def detect_rfi_1d(ms_path: str, window_size: int = DEFAULT_WINDOW_SIZE, nsigma: 
                 continue
 
             bltimes = bltab.getcol("TIME")
-            bltimeoffsets = bltimes - bltimes[0]
+            #bltimeoffsets = bltimes - bltimes[0]
             bldata = bltab.getcol('DATA')     # shape = (n_times, n_chan, 4)
             blflag = bltab.getcol("FLAG")
 
