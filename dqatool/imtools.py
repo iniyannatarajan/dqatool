@@ -1,8 +1,12 @@
 from casatasks import tclean
+from casacore.tables import table
 import bdsf
 from dqatool.logging_config import get_logger
-from dqatool.constants import DEFAULT_IMAGING_PARAMS
+from dqatool.constants import DEFAULT_IMAGING_PARAMS, SECONDS_IN_DAY
 import pandas as pd
+import datetime
+from math import ceil
+from astropy.time import Time
 
 # Create a logger for this file
 logger = get_logger(__name__)
@@ -35,6 +39,58 @@ def make_image(ms_path: str, image_name: str, imager_name: str = "tclean", image
         raise ValueError(f"Imager {imager_name} is not supported.")
     
     logger.info(f"Image {image_name} created successfully.")
+
+def image_time_chunks(ms_path: str, chunk_minutes: float, imager_name: str = 'tclean', out_prefix: str = 'timechunk', imager_params: dict = DEFAULT_IMAGING_PARAMS) -> None:
+    """
+    Divide a Measurement Set into contiguous time chunks and image each chunk.
+
+    Parameters
+    ----------
+    ms_path : str
+        Path to the input Measurement Set (MS).
+    chunk_minutes : float
+        Duration of each time chunk in minutes.
+    imager_name : str, optional
+        Name of the imager to be used. Default is 'tclean'.
+    out_prefix : str, optional
+        Prefix for the output image names. Default is 'timechunk'.
+    imager_params : dict, optional
+        Dictionary of parameters for the imager. Default is DEFAULT_IMAGING_PARAMS.
+
+    Notes
+    -----
+    This function calculates the observation time range from the Measurement Set,
+    divides it into chunks of the specified duration, and images each chunk using
+    the specified imager. The resulting images are named sequentially with the
+    provided prefix.
+    """
+    # Check if the imager is supported
+    if imager_name != "tclean":
+        logger.error(f"Imager {imager_name} is not supported.")
+        raise ValueError(f"Imager {imager_name} is not supported.")
+
+    # Find scan start and end times (in CASA MJD seconds)
+    vis = table(ms_path, readonly=True)
+    times = vis.getcol('TIME')
+    vis.close()
+
+    t_start = times.min()
+    t_end = times.max()
+
+    # Compute chunk length in seconds and the number of chunks
+    chunk_secs = chunk_minutes * 60.0
+    n_chunks = int(((t_end - t_start) / chunk_secs) + 0.9999)
+
+    # Loop over chunks to image
+    for chunk_id in range(n_chunks):
+        tstart = Time((t_start + chunk_id * chunk_secs) / SECONDS_IN_DAY, format='mjd').to_datetime()
+        tend = Time((t_start + (chunk_id + 1) * chunk_secs) / SECONDS_IN_DAY + chunk_secs, format='mjd').to_datetime()
+
+        imgname = f"{out_prefix}_{chunk_id:02d}"
+        trange = f"{tstart.strftime('%H:%M:%S')}~{tend.strftime('%H:%M:%S')}"
+
+        logger.info(f"Imaging chunk {chunk_id+1}/{n_chunks} ({imgname}), timerange={trange}")
+        tclean(vis=ms_path, imagename=imgname, timerange=trange, **imager_params)
 
 def make_source_catalog(image_name: str, catalog_name: str, mean_map: str = 'map', rms_map: bool = True,
                         thresh: str = 'hard', thresh_isl: int = 3, thresh_pix: int = 7,
