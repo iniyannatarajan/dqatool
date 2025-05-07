@@ -83,8 +83,10 @@ def image_time_chunks(ms_path: str, chunk_minutes: float, imager_name: str = 'tc
 
     # Loop over chunks to image
     for chunk_id in range(n_chunks):
-        tstart = Time((t_start + chunk_id * chunk_secs) / SECONDS_IN_DAY, format='mjd').to_datetime()
-        tend = Time((t_start + (chunk_id + 1) * chunk_secs) / SECONDS_IN_DAY + chunk_secs, format='mjd').to_datetime()
+        start_sec = t_start + chunk_id * chunk_secs
+        end_sec   = min(t_start + (chunk_id+1) * chunk_secs, t_end)
+        tstart = Time(start_sec / SECONDS_IN_DAY, format='mjd').to_datetime()
+        tend = Time(end_sec / SECONDS_IN_DAY, format='mjd').to_datetime()
 
         imgname = f"{out_prefix}_{chunk_id:02d}"
         trange = f"{tstart.strftime('%H:%M:%S')}~{tend.strftime('%H:%M:%S')}"
