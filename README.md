@@ -24,7 +24,7 @@ Create a new environment named `dqa` (or choose your own name) and activate it:
 
 ```bash
 mamba create --name dqa python=3.10 -y
-conda activate dqa
+mamba activate dqa
 ```
 
 ### 2. Install Core Dependencies
