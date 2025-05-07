@@ -7,6 +7,7 @@ from dqatool.constants import DEFAULT_NSIGMA, DEFAULT_WINDOW_SIZE, DEFAULT_SD_SC
 from itertools import combinations
 from tqdm import tqdm
 from tqdm.contrib.logging import logging_redirect_tqdm
+#import matplotlib.pyplot as plt
 
 # Create a logger for this file
 logger = get_logger(__name__)
@@ -161,6 +162,23 @@ def detect_rfi_1d(ms_path: str, window_size: int = DEFAULT_WINDOW_SIZE, nsigma: 
             outyy = np.where((datayy > thres_up_yy) | (datayy < thres_lo_yy))[0]
 
             flag_times_bldict[(ant1, ant2)] = bltimes[np.union1d(outxx, outyy)]
+
+            # # Plot the results                
+            # plt.figure(figsize=(12, 6))
+            # plt.plot(bltimeoffsets, dataxx, label='XX')
+            # plt.plot(bltimeoffsets, dataxx_mad, label='MAD XX', color='blue')
+            # plt.scatter(bltimeoffsets[outxx], dataxx[outxx], color='cyan', label='Outliers XX')
+
+            # plt.plot(bltimeoffsets, datayy, label='YY')
+            # plt.plot(bltimeoffsets, datayy_mad, label='MAD YY', color='red')
+            # plt.scatter(bltimeoffsets[outyy], datayy[outyy], color='orange', label='Outliers YY')
+            
+            # plt.xlabel('Time (s)')
+            # plt.ylabel('Amplitude')
+            # plt.title(f'Outliers for baseline {ant1}-{ant2}')
+            # plt.legend()
+            # plt.grid()
+            # plt.show()             
 
     # Write flags to MS if requested
     if overwriteflags:
