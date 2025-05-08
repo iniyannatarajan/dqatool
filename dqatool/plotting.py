@@ -9,6 +9,9 @@ from bokeh.layouts import gridplot
 from dqatool.constants import SECONDS_IN_DAY, XX_CORRID, YY_CORRID, DEFAULT_MARKER_SIZE, DEFAULT_ALPHA, HZ_IN_GHZ, SPEED_OF_LIGHT
 from typing import Literal, List
 from dqatool.logging_config import get_logger
+from bokeh.models import ColumnDataSource, LinearColorMapper, ColorBar, BasicTicker
+from bokeh.palettes import Viridis256
+import pandas as pd
 
 tb = table()
 
@@ -299,4 +302,91 @@ def plot_custom(x, y, x_label: str = 'X', y_label: str = 'Y', title: str = 'Titl
     # Scatter plot
     p.scatter(x, y, marker="circle", size=DEFAULT_MARKER_SIZE, color="blue", alpha=0.5)
 
+    show(p)
+
+def plot_sources(df: pd.DataFrame, in_notebook: bool = True, save_path: str = 'sources.html') -> None:
+    """
+    Create a Bokeh scatter plot of sources with RA and DEC coordinates.
+
+    This function visualizes the positions of sources on the sky using their
+    Right Ascension (RA) and Declination (DEC) values. The points are colored
+    based on their 'Total_flux' values, with a color bar indicating the flux scale.
+
+    Parameters
+    ----------
+    df : pandas.DataFrame
+        A DataFrame containing the following columns:
+        - 'Source_id': Unique identifier for each source.
+        - 'RA': Right Ascension in degrees.
+        - 'DEC': Declination in degrees.
+        - 'Total_flux': Total flux of the source.
+    in_notebook : bool, optional
+        If True, renders the plot inline in a Jupyter notebook. Default is True.
+    save_path : str, optional
+        Path to save the generated plot as an HTML file. Default is 'sources.html'.
+
+    Returns
+    -------
+    None
+        Displays the plot in a Jupyter notebook or saves it to the specified path.
+    """
+    # Decide how to render the plot
+    if in_notebook:
+        output_notebook()
+    else:
+        logger.info(f"Saving plot to {save_path}")
+        output_file(save_path)
+
+    # prepare data source
+    source = ColumnDataSource(df)
+
+    # color mapper from flux to palette
+    color_mapper = LinearColorMapper(
+        palette=Viridis256,
+        low=df['Total_flux'].min(),
+        high=df['Total_flux'].max()
+    )
+
+    # compute data bounds + 1 deg. margin
+    ra_min = df['RA'].min() - 1.0
+    ra_max = df['RA'].max() + 1.0
+    dec_min = df['DEC'].min() - 1.0
+    dec_max = df['DEC'].max() + 1.0
+
+    # create figure
+    p = figure(
+        title="Source Positions Colored by Total_flux",
+        x_axis_label="RA (deg)",
+        y_axis_label="DEC (deg)",
+        tools="pan,wheel_zoom,box_zoom,reset,hover,save"
+    )
+
+    # make RA decrease to the right, with 1° margins
+    p.x_range.start = ra_max
+    p.x_range.end   = ra_min
+
+    # set DEC range with 1° margins
+    p.y_range.start = dec_min
+    p.y_range.end   = dec_max
+
+    # add circle glyphs
+    p.scatter(
+        x='RA', y='DEC', source=source,
+        size=8,
+        marker="circle",
+        fill_color={'field': 'Total_flux', 'transform': color_mapper},
+        line_color=None
+    )
+
+    # add color bar
+    color_bar = ColorBar(
+        color_mapper=color_mapper,
+        ticker=BasicTicker(),
+        label_standoff=8,
+        title="Total_flux",
+        location=(0, 0)
+    )
+    p.add_layout(color_bar, 'right')
+
+    # display plot
     show(p)
