@@ -8,6 +8,10 @@ import pandas as pd
 import datetime
 from math import ceil
 from astropy.time import Time
+from astroquery.skyview import SkyView
+from astroquery.vizier import Vizier
+from astropy.coordinates import SkyCoord
+import astropy.units as u
 
 tb = table()
 
@@ -212,3 +216,72 @@ def subtract_casa_images(imgA: str, imgB: str, outimage: str) -> None:
         csys=csys_record
     )
     ia.close()
+
+def match_sources_to_nvss(df_in: pd.DataFrame, cutout_radius: u.Quantity = 0.5*u.deg, search_radius: u.Quantity = 1.0*u.arcmin,
+                          row_limit: int = 5) -> pd.DataFrame:
+    """
+    Match sources in the input DataFrame to the NVSS catalog.
+
+    For each source in the input DataFrame, this function fetches an NVSS image cutout
+    via SkyView, queries the NVSS catalog (VIII/65/nvss) via Vizier, and parses the
+    sexagesimal RAJ2000/DEJ2000 strings into decimal degrees. It then returns a combined
+    DataFrame with the matched NVSS sources and their properties.
+
+    Parameters
+    ----------
+    df_in : pandas.DataFrame
+        Input table with columns ['Source_id', 'RA', 'DEC', 'Total_flux'].
+        RA and DEC should be in decimal degrees.
+    cutout_radius : astropy.units.Quantity, optional
+        Radius of the SkyView image cutout to download. Default is 0.5 degrees.
+    search_radius : astropy.units.Quantity, optional
+        Radius around the input position in which to search the NVSS catalog. Default is 1.0 arcmin.
+    row_limit : int, optional
+        Maximum number of catalog rows to fetch per query. Default is 5.
+
+    Returns
+    -------
+    pandas.DataFrame
+        A DataFrame with one row per input source, containing the following columns:
+        ['Source_id', 'RA', 'DEC', 'Total_flux', 'NVSS', 'RAJ2000_deg', 'DEJ2000_deg', 'S1.4_mJy', 'e_S1.4_mJy'].
+        If no NVSS match is found for a source, the NVSS-related columns will contain None/NaN.
+    """
+    # prepare Vizier for NVSS catalog
+    viz = Vizier(columns=['NVSS','RAJ2000','DEJ2000','S1.4','e_S1.4'], column_filters={"S1.4":">0"}, row_limit=row_limit)
+
+    outdf = []
+    for _, row in df_in.iterrows():
+        src_id, ra0, dec0, tf = int(row['Source_id']), row['RA'], row['DEC'], row['Total_flux']
+        center = SkyCoord(ra=ra0*u.deg, dec=dec0*u.deg, frame='icrs')
+
+        # Fetch NVSS cutout and discard it since we just need the coordinates
+        _ = SkyView.get_images(position=center, survey=['NVSS'], radius=cutout_radius)
+
+        # Query NVSS catalog around center
+        cat = viz.query_region(center, radius=search_radius, catalog='VIII/65/nvss')
+
+        if cat:
+            m = cat[0][0]
+            # parse the sexagesimal strings into decimal degrees
+            c = SkyCoord(ra=m['RAJ2000'], dec=m['DEJ2000'], unit=(u.hourangle, u.deg), frame='icrs')
+            nvss_id   = m['NVSS']
+            raj_deg   = c.ra.deg
+            dej_deg   = c.dec.deg
+            flux_nvss = m['S1.4']
+            err_nvss  = m['e_S1.4']
+        else:
+            nvss_id, raj_deg, dej_deg, flux_nvss, err_nvss = (None,)*5
+
+        outdf.append({
+            'Source_id':     src_id,
+            'RA':            ra0,
+            'DEC':           dec0,
+            'Total_flux':    tf,
+            'NVSS':          nvss_id,
+            'RAJ2000_deg':   raj_deg,
+            'DEJ2000_deg':   dej_deg,
+            'S1.4_mJy':      flux_nvss,
+            'e_S1.4_mJy':    err_nvss
+        })
+
+    return pd.DataFrame(outdf)
