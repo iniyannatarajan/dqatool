@@ -4,18 +4,21 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from astropy.time import Time
 from bokeh.plotting import figure, show
-from bokeh.io import output_notebook
+from bokeh.io import output_notebook, output_file
 from bokeh.layouts import gridplot
 from dqatool.constants import SECONDS_IN_DAY, XX_CORRID, YY_CORRID, DEFAULT_MARKER_SIZE, DEFAULT_ALPHA, HZ_IN_GHZ, SPEED_OF_LIGHT
 from typing import Literal, List
+from dqatool.logging_config import get_logger
 
 tb = table()
+
+logger = get_logger(__name__)
 
 # Set Seaborn style for all plots
 sns.set_theme(style="whitegrid")
 
 def plot_amp_vs_time(ms_path: str, colname: Literal['DATA', 'MODEL_DATA', 'CORRECTED_DATA'] = 'DATA', 
-                        corrs: List[Literal[0, 1, 2, 3]] = [0], save_path: str = 'amp_vs_time.png') -> None:
+                        corrs: List[Literal[0, 1, 2, 3]] = [0], in_notebook: bool = False, save_path: str = 'amp_vs_time.html') -> None:
     """
     Plot visibility amplitudes vs. time as scatter points for the specified correlations.
 
@@ -39,8 +42,12 @@ def plot_amp_vs_time(ms_path: str, colname: Literal['DATA', 'MODEL_DATA', 'CORRE
     ValueError
         If any of the specified correlation indices are invalid.
     """
-    # Render inline in a notebook
-    output_notebook()
+    # Decide how to render the plot
+    if in_notebook:
+        output_notebook()
+    else:
+        logger.info(f"Saving plot to {save_path}")
+        output_file(save_path)
 
     # Load data from MS
     tb.open(ms_path)
@@ -105,7 +112,8 @@ def plot_amp_vs_time(ms_path: str, colname: Literal['DATA', 'MODEL_DATA', 'CORRE
     # Show the grid of plots
     show(grid)
 
-def plot_amp_vs_freq(ms_path: str, colname: Literal['DATA', 'MODEL_DATA', 'CORRECTED_DATA'] = 'DATA', corrs: List[Literal[0, 1, 2, 3]] = [0]) -> None:
+def plot_amp_vs_freq(ms_path: str, colname: Literal['DATA', 'MODEL_DATA', 'CORRECTED_DATA'] = 'DATA', 
+                     corrs: List[Literal[0, 1, 2, 3]] = [0], in_notebook: bool = False, save_path: str = 'amp_vs_time.html') -> None:
     """
     Plot visibility amplitudes vs. frequency, one subplot per correlation,
     arranged in a 2×2 grid.
@@ -124,7 +132,12 @@ def plot_amp_vs_freq(ms_path: str, colname: Literal['DATA', 'MODEL_DATA', 'CORRE
     ValueError
         If any correlation index is invalid or more than four are requested.
     """
-    output_notebook()
+    # Decide how to render the plot
+    if in_notebook:
+        output_notebook()
+    else:
+        logger.info(f"Saving plot to {save_path}")
+        output_file(save_path)
 
     # Load visibilities and flags
     tb.open(ms_path)
@@ -196,7 +209,7 @@ def plot_amp_vs_freq(ms_path: str, colname: Literal['DATA', 'MODEL_DATA', 'CORRE
 
     show(grid)
 
-def plot_uv_coverage(ms_path: str) -> None:
+def plot_uv_coverage(ms_path: str, in_notebook: bool = False, save_path: str = 'uv_coverage.html') -> None:
     """
     Plot UV coverage of a CASA MeasurementSet.
 
@@ -205,8 +218,12 @@ def plot_uv_coverage(ms_path: str) -> None:
     ms_path : str
         Path to the CASA measurement set.
     """
-    # render inline in a notebook
-    output_notebook()
+    # Decide how to render the plot
+    if in_notebook:
+        output_notebook()
+    else:
+        logger.info(f"Saving plot to {save_path}")
+        output_file(save_path)
 
     # Load data from MS
     tb.open(ms_path)
