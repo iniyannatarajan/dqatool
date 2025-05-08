@@ -1,5 +1,5 @@
 from casatasks import tclean
-from casacore.tables import table
+from casatools import table
 import bdsf
 from dqatool.logging_config import get_logger
 from dqatool.constants import DEFAULT_IMAGING_PARAMS, SECONDS_IN_DAY
@@ -7,6 +7,8 @@ import pandas as pd
 import datetime
 from math import ceil
 from astropy.time import Time
+
+tb = table()
 
 # Create a logger for this file
 logger = get_logger(__name__)
@@ -70,9 +72,9 @@ def image_time_chunks(ms_path: str, chunk_minutes: float, imager_name: str = 'tc
         raise ValueError(f"Imager {imager_name} is not supported.")
 
     # Find scan start and end times (in CASA MJD seconds)
-    vis = table(ms_path, readonly=True)
-    times = vis.getcol('TIME')
-    vis.close()
+    tb.open(ms_path)
+    times = tb.getcol('TIME')
+    tb.close()
 
     t_start = times.min()
     t_end = times.max()
