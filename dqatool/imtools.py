@@ -131,7 +131,7 @@ def make_source_catalog(image_name: str, catalog_name: str, mean_map: str = 'map
 
     logger.info(f"Source catalog {catalog_name} created successfully.")
 
-def display_catalog(catalog_name: str) -> None:
+def display_catalog_top20(catalog_name: str) -> None:
     """
     Display the brightest 20 sources from the source catalog.
 
@@ -170,3 +170,5 @@ def display_catalog(catalog_name: str) -> None:
     brightest20 = df2.sort_values("Total_flux", ascending=False).head(20)
 
     return brightest20
+
+

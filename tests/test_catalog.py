@@ -1,6 +1,6 @@
 import pandas as pd
 import os
-from dqatool.imtools import display_catalog
+from dqatool.imtools import display_catalog_top20
 
 DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
 
@@ -8,7 +8,7 @@ def test_display_catalog_returns_top_20():
     catalog_file = os.path.join(DATA_DIR, "sample_catalog.txt")
 
     # Run the function
-    df = display_catalog(str(catalog_file))
+    df = display_catalog_top20(str(catalog_file))
 
     # Perform some basic checks
     assert isinstance(df, pd.DataFrame)
