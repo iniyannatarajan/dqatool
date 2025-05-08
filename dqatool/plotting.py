@@ -1,4 +1,4 @@
-from casacore import tables
+from casatools import table
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -8,6 +8,8 @@ from bokeh.io import output_notebook
 from bokeh.layouts import gridplot
 from dqatool.constants import SECONDS_IN_DAY, XX_CORRID, YY_CORRID, DEFAULT_MARKER_SIZE, DEFAULT_ALPHA, HZ_IN_GHZ, SPEED_OF_LIGHT
 from typing import Literal, List
+
+tb = table()
 
 # Set Seaborn style for all plots
 sns.set_theme(style="whitegrid")
@@ -41,19 +43,21 @@ def plot_amp_vs_time(ms_path: str, colname: Literal['DATA', 'MODEL_DATA', 'CORRE
     output_notebook()
 
     # Load data from MS
-    vis = tables.table(ms_path, ack=False)
-    data = vis.getcol(colname)    # shape: (nRow, nChan, nCorr)
-    flags = vis.getcol("FLAG")   # same shape
-    times = vis.getcol("TIME")   # shape: (nRow,)
-    vis.close()
+    tb.open(ms_path)
+    data = tb.getcol(colname)    # shape: (nRow, nChan, nCorr)
+    flags = tb.getcol("FLAG")   # same shape
+    times = tb.getcol("TIME")   # shape: (nRow,)
+    tb.close()
+    data = np.transpose(data, axes=(2, 1, 0))
+    flags = np.transpose(flags, axes=(2, 1, 0))
 
     # Convert times to datetime
     times_dt = Time(times / SECONDS_IN_DAY, format='mjd').to_datetime()
 
     # Load polarization labels from POLARIZATION table
-    pol_table = tables.table(f"{ms_path}/POLARIZATION", ack=False)
-    corr_types = pol_table.getcol("CORR_TYPE")[0]  # Get correlation types (e.g., [5, 6, 7, 8])
-    pol_table.close()
+    tb.open(f"{ms_path}::POLARIZATION")
+    corr_types = tb.getcol("CORR_TYPE")[:, 0]  # Get correlation types (e.g., [5, 6, 7, 8])
+    tb.close()
 
     # Map correlation types to labels
     corr_labels = {5: "RR", 6: "RL", 7: "LR", 8: "LL", 9: "XX", 10: "XY", 11: "YX", 12: "YY"}
@@ -123,20 +127,24 @@ def plot_amp_vs_freq(ms_path: str, colname: Literal['DATA', 'MODEL_DATA', 'CORRE
     output_notebook()
 
     # Load visibilities and flags
-    vis = tables.table(ms_path, ack=False)
-    data = vis.getcol(colname)    # (nRow, nChan, nCorr)
-    flags = vis.getcol("FLAG")    # same shape
-    vis.close()
+    tb.open(ms_path)
+    data = tb.getcol(colname)    # (nRow, nChan, nCorr)
+    flags = tb.getcol("FLAG")    # same shape
+    tb.close()
+    data = np.transpose(data, axes=(2, 1, 0))
+    flags = np.transpose(flags, axes=(2, 1, 0))
 
     # Load frequencies
-    spw = tables.table(f"{ms_path}/SPECTRAL_WINDOW", ack=False)
-    freqs = spw.getcol("CHAN_FREQ")[0] / HZ_IN_GHZ  # GHz
-    spw.close()
+    tb.open(f"{ms_path}::SPECTRAL_WINDOW")
+    freqs = tb.getcol("CHAN_FREQ")[:, 0] / HZ_IN_GHZ  # GHz
+    tb.close()
 
     # Load correlation types & labels
-    pol = tables.table(f"{ms_path}/POLARIZATION", ack=False)
-    corr_types = pol.getcol("CORR_TYPE")[0]
-    pol.close()
+    tb.open(f"{ms_path}::POLARIZATION")
+    corr_types = tb.getcol("CORR_TYPE")[:, 0]
+    tb.close()
+
+    # Map correlation types to labels
     corr_labels = {5: "RR", 6: "RL", 7: "LR", 8: "LL", 9: "XX", 10: "XY", 11: "YX", 12: "YY"}
     labels = [corr_labels.get(ct, f"Corr {ct}") for ct in corr_types]
 
@@ -201,15 +209,15 @@ def plot_uv_coverage(ms_path: str) -> None:
     output_notebook()
 
     # Load data from MS
-    vis = tables.table(ms_path, ack=False)
-    # Get the UVW coordinates
-    uvw = vis.getcol("UVW")
-    vis.close()
+    tb.open(ms_path)
+    uvw = tb.getcol("UVW")
+    tb.close()
+    uvw = np.transpose(uvw, axes=(1, 0))  # (nRow, 3) -> (3, nRow)
 
     # Get the frequency from the SPECTRAL_WINDOW table
-    spw = tables.table(f"{ms_path}::SPECTRAL_WINDOW", ack=False)
-    freqs = spw.getcol("CHAN_FREQ")[0]  # (nChan,)
-    spw.close()
+    tb.open(f"{ms_path}::SPECTRAL_WINDOW")
+    freqs = tb.getcol("CHAN_FREQ")[:, 0]  # (nChan,)
+    tb.close()
 
     f_ref = freqs.mean()
 
