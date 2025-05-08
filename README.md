@@ -34,6 +34,12 @@ Install the `casadata` pacakge using pip:
 ```bash
 pip install casadata
 ```
+The above will install the minimal data required by CASA. To ensure that the full casa database is downloaded, create the following directory manually:
+
+```bash
+mkdir $HOME/.casa/data
+```
+After this, the first time you import `casatools` or `casatasks`, additional data packages will be downloaded automatically to the above directory.
 
 ### 3. Clone & Install the Repository
 
