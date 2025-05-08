@@ -7,7 +7,6 @@ from dqatool.constants import DEFAULT_NSIGMA, DEFAULT_WINDOW_SIZE, DEFAULT_SD_SC
 from itertools import combinations
 from tqdm import tqdm
 from tqdm.contrib.logging import logging_redirect_tqdm
-#import matplotlib.pyplot as plt
 
 tb = table()
 
