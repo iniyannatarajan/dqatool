@@ -186,6 +186,71 @@ tornado = {version = ">=6.2", markers = "sys_platform != \"emscripten\""}
 xyzservices = ">=2021.09.1"
 
 [[package]]
+name = "casaconfig"
+version = "1.3.1"
+description = "CASA Operational Configuration Package"
+optional = false
+python-versions = ">=3.8"
+groups = ["main"]
+files = [
+    {file = "casaconfig-1.3.1-py3-none-any.whl", hash = "sha256:9bd36b0ef780d72ad78724bcde545041b973a2192ef7135320264ccfe155b250"},
+    {file = "casaconfig-1.3.1.tar.gz", hash = "sha256:6b04b2b820e6b47177cb680b9db8505ddff2a9451eca533e7f2f80bbaf666e79"},
+]
+
+[package.dependencies]
+certifi = ">=2023.5.7"
+
+[[package]]
+name = "casatasks"
+version = "6.7.0.31"
+description = "the CASA tasks"
+optional = false
+python-versions = "*"
+groups = ["main"]
+files = [
+    {file = "casatasks-6.7.0.31-py3-none-any.whl", hash = "sha256:61621b22e74cd9fb1e87af0c0626e3ff1e3c6e824e4f203e60a25d623e741dec"},
+]
+
+[package.dependencies]
+casatools = "6.7.0.31"
+certifi = "*"
+matplotlib = "*"
+pyerfa = "*"
+scipy = "*"
+
+[[package]]
+name = "casatools"
+version = "6.7.0.31"
+description = "Astronomy data reduction library"
+optional = false
+python-versions = ">=3.6"
+groups = ["main"]
+files = [
+    {file = "casatools-6.7.0.31-cp310-cp310-macosx_14_0_arm64.whl", hash = "sha256:15e87d764e7915bdfbe34de682bde1a1aa5a98a8b371697b89ebd71e41b83245"},
+    {file = "casatools-6.7.0.31-cp310-cp310-manylinux_2_28_x86_64.whl", hash = "sha256:6be2aad5066b54b007f26701858a97357c4dc6e819e1ed008b8ce62de82e6c88"},
+    {file = "casatools-6.7.0.31-cp311-cp311-macosx_14_0_arm64.whl", hash = "sha256:f54e8ed8649fd208079e09e757a8fc56e0c22b9919f92cdbb2297d6aa03f8f24"},
+    {file = "casatools-6.7.0.31-cp311-cp311-manylinux_2_28_x86_64.whl", hash = "sha256:273c80c9f378bb2fcaef29ccaae06cd10369e5a48b1771e56dc00574d90314ff"},
+    {file = "casatools-6.7.0.31-cp312-cp312-macosx_14_0_arm64.whl", hash = "sha256:aa4f21caf3dd30bc8d923a80cec0a0c1ff3a856b650ffcc3495225d108c65141"},
+    {file = "casatools-6.7.0.31-cp312-cp312-manylinux_2_28_x86_64.whl", hash = "sha256:3a9875fe68d37494f136666c401951c1f48717f8275ec79135d0896e9b4a3a02"},
+]
+
+[package.dependencies]
+casaconfig = "*"
+numpy = "*"
+
+[[package]]
+name = "certifi"
+version = "2025.4.26"
+description = "Python package for providing Mozilla's CA Bundle."
+optional = false
+python-versions = ">=3.6"
+groups = ["main"]
+files = [
+    {file = "certifi-2025.4.26-py3-none-any.whl", hash = "sha256:30350364dfe371162649852c63336a15c70c6510c2ad5015b21c2345311805f3"},
+    {file = "certifi-2025.4.26.tar.gz", hash = "sha256:0a816057ea3cdefcef70270d2c515e4506bbc954f417fa5ade2021213bb8f0c6"},
+]
+
+[[package]]
 name = "click"
 version = "8.1.8"
 description = "Composable command line interface toolkit"
@@ -960,14 +1025,14 @@ xmp = ["defusedxml"]
 
 [[package]]
 name = "platformdirs"
-version = "4.3.7"
+version = "4.3.8"
 description = "A small Python package for determining appropriate platform-specific dirs, e.g. a `user data dir`."
 optional = false
 python-versions = ">=3.9"
 groups = ["dev"]
 files = [
-    {file = "platformdirs-4.3.7-py3-none-any.whl", hash = "sha256:a03875334331946f13c549dbd8f4bac7a13a50a895a0eb1e8c6a8ace80d40a94"},
-    {file = "platformdirs-4.3.7.tar.gz", hash = "sha256:eb437d586b6a0986388f0d6f74aa0cde27b48d0e3d66843640bfb6bdcdb6e351"},
+    {file = "platformdirs-4.3.8-py3-none-any.whl", hash = "sha256:ff7059bb7eb1179e2685604f4aaf157cfd9535242bd23742eadc3c13542139b4"},
+    {file = "platformdirs-4.3.8.tar.gz", hash = "sha256:3d512d96e16bcb959a814c9f348431070822a6496326a4be0911c40b5a74c2bc"},
 ]
 
 [package.extras]
@@ -1372,4 +1437,4 @@ files = [
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.10"
-content-hash = "58e4ae6852bdc8388aa7731c0fec37d51c2175de33567d9587236398920bdbd1"
+content-hash = "d80b41924712c38cb80b726c31bb3c9e67e3cdc6acac06c2dd18b443fb2fd15d"

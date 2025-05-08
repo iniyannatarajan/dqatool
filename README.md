@@ -27,25 +27,15 @@ mamba create --name dqa python=3.10 -y
 mamba activate dqa
 ```
 
-### 2. Install Core Dependencies
+### 2. Install casadata using pip
 
-Install the CASA libraries plus Jupyter tools in one go:
-
-```bash
-mamba install casacore python-casacore casatasks casatools ipython ipykernel ipywidgets notebook jupyterlab -y
-```
-
-### 3. Register the Jupyter Kernel
-
-Register this environment so you can select it in Jupyter notebooks:
+Install the `casadata` pacakge using pip:
 
 ```bash
-python -m ipykernel install --user --name dqa --display-name "dqa"
+pip install casadata
 ```
 
-This creates a kernel spec under `~/.local/share/jupyter/kernels/dqa/` pointing at your `dqa` environment’s Python.
-
-### 4. Clone & Install the Repository
+### 3. Clone & Install the Repository
 
 ```bash
 git clone https://github.com/iniyannatarajan/dqatool.git
@@ -64,23 +54,27 @@ Alternatively, install in “editable” mode with pip:
 pip install -e .
 ```
 
-### 5. Verify Installation
+### 4. Install and Register the Jupyter Kernel
 
-Launch JupyterLab:
+Install packages necessary for running Jupyter under this mamba environment and register this environment so that it can be selected to run Jupyter notebooks. The library uses `bokeh` to generate interactive plots:
 
 ```bash
-jupyter lab
+mamba install ipython ipykernel ipywidgets notebook jupyterlab
+python -m ipykernel install --user --name dqa --display-name "dqa"
 ```
 
-In the launcher, choose the “dqa” kernel.
-
-Open one of the example notebooks (e.g. `examples/demo.ipynb`) and confirm everything runs.
+This creates a kernel spec under `~/.local/share/jupyter/kernels/dqa/` pointing to your `dqa` environment’s Python.
 
 ## Usage
-```bash
-# Example usage
-<usage-command>
+In the Python interpreter, a Jupyter notebook, or in your own scripts, the module can be imported in the standard way. For instance, to access
+the RFI routines, do the following:
+
+```python
+from dqatool import rfi
+rfi.detect_rfi_1d("msname.ms", overwrite=False, flagfile="rfiflags.txt")
 ```
+
+The example notebook located at *examples/dqa.ipynb* contains further information on how the various submodules can be accessed and used.
 
 ## Contributing
 1. Fork the repository.
