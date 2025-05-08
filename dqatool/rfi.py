@@ -1,4 +1,4 @@
-from casacore import tables
+from casatools import table
 import numpy as np
 from astropy.time import Time
 from dqatool.logging_config import get_logger
@@ -8,6 +8,8 @@ from itertools import combinations
 from tqdm import tqdm
 from tqdm.contrib.logging import logging_redirect_tqdm
 #import matplotlib.pyplot as plt
+
+tb = table()
 
 # Create a logger for this file
 logger = get_logger(__name__)
@@ -72,9 +74,9 @@ def detect_rfi_1d(ms_path: str, window_size: int = DEFAULT_WINDOW_SIZE, nsigma: 
     >>> detect_rfi_1d("mydata.ms", overwriteflags=True)
     """
     # Load data from MS
-    vis = tables.table(ms_path, ack=False)
-    antenna1 = vis.getcol("ANTENNA1")
-    antenna2 = vis.getcol("ANTENNA2")
+    tb.open(ms_path)
+    antenna1 = tb.getcol("ANTENNA1")
+    antenna2 = tb.getcol("ANTENNA2")
     
     # Assign values to some common variables
     antstart = 0
@@ -90,15 +92,21 @@ def detect_rfi_1d(ms_path: str, window_size: int = DEFAULT_WINDOW_SIZE, nsigma: 
 
     for ant1, ant2 in tqdm(baseline_iter, total=total_baselines, desc="Processing baselines"):
         with logging_redirect_tqdm():
-            bltab = vis.query(f"ANTENNA1=={ant1} AND ANTENNA2=={ant2}")
-            if bltab.nrows() == 0:
+            bltab = tb.query(f"ANTENNA1=={ant1} AND ANTENNA2=={ant2}")
+            bldata = bltab.getcol("DATA")
+            # Check if the baseline data is empty and if so, skip to the next baseline
+            if bldata.size == 0:
                 logger.warning(f"No data found for baseline {ant1}-{ant2}")
                 continue
 
             bltimes = bltab.getcol("TIME")
             #bltimeoffsets = bltimes - bltimes[0]
-            bldata = bltab.getcol('DATA')     # shape = (n_times, n_chan, 4)
             blflag = bltab.getcol("FLAG")
+            bltab.close()
+
+            # To match the casacore.tables array shapes, we need to transpose the data
+            bldata = np.transpose(bldata, axes=(2, 1, 0))  # shape = (n_times, n_chan, 4)
+            blflag = np.transpose(blflag, axes=(2, 1, 0))  # shape = (n_times, n_chan, 4)
 
             # mask flagged visibilities
             bldata[blflag] = np.nan
@@ -178,28 +186,31 @@ def detect_rfi_1d(ms_path: str, window_size: int = DEFAULT_WINDOW_SIZE, nsigma: 
             # plt.title(f'Outliers for baseline {ant1}-{ant2}')
             # plt.legend()
             # plt.grid()
-            # plt.show()             
+            # plt.show()
+
+    # Close the MS table
+    tb.close()
 
     # Write flags to MS if requested
     if overwriteflags:
         # Read relevant arrays from MS
-        alltimes = vis.getcol("TIME")
-        flag_row = vis.getcol("FLAG_ROW")
-        flag = vis.getcol("FLAG")
-
-        # Close the MS table
-        vis.close()
+        tb.open(ms_path)
+        alltimes = tb.getcol("TIME")
+        flag_row = tb.getcol("FLAG_ROW")
+        flag = tb.getcol("FLAG")
+        tb.close()
 
         # Update flag arrays
         for (ant1, ant2), times in flag_times_bldict.items():
             for timeval in times:
                 idx = np.where((antenna1 == ant1) & (antenna2 == ant2) & (alltimes  == timeval))[0]
                 flag_row[idx] = True
-                flag[idx, :, :] = True
+                flag[:, :, idx] = True
 
-        with tables.table(ms_path, readonly=False) as ms:
-            ms.putcol("FLAG_ROW", flag_row)
-            ms.putcol("FLAG",     flag)
+        tb.open(ms_path, nomodify=False)
+        tb.putcol("FLAG_ROW", flag_row)
+        tb.putcol("FLAG", flag)
+        tb.close()
 
         logger.info("Flags updated in the MS.")
     else:
