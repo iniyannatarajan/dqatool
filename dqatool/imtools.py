@@ -1,8 +1,9 @@
 from casatasks import tclean
-from casatools import table
+from casatools import table, image
 import bdsf
 from dqatool.logging_config import get_logger
 from dqatool.constants import DEFAULT_IMAGING_PARAMS, SECONDS_IN_DAY
+import numpy as np
 import pandas as pd
 import datetime
 from math import ceil
@@ -171,4 +172,43 @@ def display_catalog_top20(catalog_name: str) -> None:
 
     return brightest20
 
+def subtract_casa_images(imgA: str, imgB: str, outimage: str) -> None:
+    """
+    Subtracts two CASA images and saves the result to a new image file.
+    Parameters
+    ----------
+    imgA : str
+        Path to the first CASA image file.
+    imgB : str
+        Path to the second CASA image file.
+    outimage : str
+        Path to the output CASA image file where the result will be saved.
+    Returns
+    -------
+    None
+        This function does not return a value. The result is saved to the specified output file.
+    """
 
+    ia = image()
+
+    # Read the input images
+    ia.open(imgA)
+    dataA = ia.getchunk()
+    # extract the CASA coordsys tool and convert to a serializable record for the output image.
+    csys_record = ia.coordsys().torecord()
+    ia.close()
+
+    ia.open(imgB)
+    dataB = ia.getchunk()
+    ia.close()
+
+    # Subtract the two images
+    diff = dataA - dataB
+
+    # Create the output image from the array and coordsys
+    ia.newimagefromarray(
+        outfile=outimage,
+        pixels=diff.astype(np.float32),
+        csys=csys_record
+    )
+    ia.close()
