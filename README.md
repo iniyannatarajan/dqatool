@@ -80,7 +80,7 @@ from dqatool import rfi
 rfi.detect_rfi_1d("msname.ms", overwrite=False, flagfile="rfiflags.txt")
 ```
 
-The example notebook located at *examples/dqa.ipynb* contains further information on how the various submodules can be accessed and used.
+The notebook *examples/dqa_notebook.ipynb* contains further information on how the various submodules can be accessed and used.
 
 ## Contributing
 1. Fork the repository.
