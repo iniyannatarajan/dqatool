@@ -304,7 +304,7 @@ def plot_custom(x, y, x_label: str = 'X', y_label: str = 'Y', title: str = 'Titl
 
     show(p)
 
-def plot_sources(df: pd.DataFrame, in_notebook: bool = True, save_path: str = 'sources.html') -> None:
+def plot_sources(df: pd.DataFrame, pad_deg: float = 1.0, in_notebook: bool = True, save_path: str = 'sources.html') -> None:
     """
     Create a Bokeh scatter plot of sources with RA and DEC coordinates.
 
@@ -320,6 +320,8 @@ def plot_sources(df: pd.DataFrame, in_notebook: bool = True, save_path: str = 's
         - 'RA': Right Ascension in degrees.
         - 'DEC': Declination in degrees.
         - 'Total_flux': Total flux of the source.
+    pad_deg : float, optional
+        Padding in degrees to add around the RA and DEC ranges. Default is 1.0.
     in_notebook : bool, optional
         If True, renders the plot inline in a Jupyter notebook. Default is True.
     save_path : str, optional
@@ -348,10 +350,10 @@ def plot_sources(df: pd.DataFrame, in_notebook: bool = True, save_path: str = 's
     )
 
     # compute data bounds + 1 deg. margin
-    ra_min = df['RA'].min() - 1.0
-    ra_max = df['RA'].max() + 1.0
-    dec_min = df['DEC'].min() - 1.0
-    dec_max = df['DEC'].max() + 1.0
+    ra_min = df['RA'].min() - pad_deg
+    ra_max = df['RA'].max() + pad_deg
+    dec_min = df['DEC'].min() - pad_deg
+    dec_max = df['DEC'].max() + pad_deg
 
     # create figure
     p = figure(
